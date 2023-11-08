@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PixelDrain Remote Upload</title>
+</head>
+<body>
+    <h1>Upload a File to PixelDrain</h1>
+    <form id="uploadForm">
+        <label for="fileUrl">Enter the direct link to the file:</label>
+        <input type="text" id="fileUrl" placeholder="https://example.com/your-file.ext">
+        <br><br>
+        <label for="customFileName">Custom File Name (optional):</label>
+        <input type="text" id="customFileName" placeholder="CustomFileName.ext">
+        <br><br>
+        <button type="button" id="uploadButton" onclick="uploadToPixelDrain()">Upload</button>
+    </form>
+    <div id="responseField"></div>
+
+    <script>
+        async function uploadFile(url, fileName, responseField) {
+            // Encode the URL to handle spaces and special characters
+            const encodedURL = encodeURIComponent(url);
+
+            const { file, isImage } = await fetchFileContent(encodedURL, fileName, responseField);
+
+            if (file) {
+                const formData = new FormData();
+                formData.append('name', fileName);
+                formData.append('anonymous', true);
+                formData.append('file', file);
+
+                try {
+                    const postResponse = await fetch('https://pixeldrain.com/api/file', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (postResponse.ok) {
+                        const data = await postResponse.json();
+                        const fileID = data.id;
+
+                        // Display the URL format based on file type
+                        if (isImage) {
+                            responseField.innerHTML = `Image URL: <a href="https://pixeldrain.com/api/file/${fileID}" target="_blank">https://pixeldrain.com/api/file/${fileID}</a>`;
+                        } else {
+                            responseField.innerHTML = `File URL: <a href="https://pixeldrain.com/u/${fileID}" target="_blank">https://pixeldrain.com/u/${fileID}</a>`;
+                        }
+                    } else {
+                        responseField.textContent = "Error uploading the file 1.";
+                    }
+                } catch (error) {
+                    console.error(error);
+                    responseField.textContent = "Error uploading the file 2.";
+                }
+            }
+        }
+
+        async function uploadToPixelDrain() {
+            const fileUrl = document.getElementById('fileUrl').value;
+            const customFileName = document.getElementById('customFileName').value;
+            const responseField = document.getElementById('responseField');
+
+            try {
+                const fileResponse = await fetch(fileUrl);
+                if (fileResponse.ok) {
+                    const fileBlob = await fileResponse.blob();
+                    const fileName = customFileName || 'your-custom-file-name.ext';
+
+                    // Call the uploadFile function with the fileBlob, generated file name, and the response field.
+                    uploadFile(fileUrl, fileName, responseField);
+                } else {
+                    responseField.textContent = "Error fetching the file content 3.";
+                }
+            } catch (error) {
+                console.error(error);
+                responseField.textContent = "Error uploading the file 4.";
+            }
+        }
+    </script>
+</body>
+</html>
