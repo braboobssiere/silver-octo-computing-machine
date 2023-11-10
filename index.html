@@ -21,18 +21,20 @@
             try {
                 // Fetch the file content from the URL with 'no-cors' mode
                 const response = await fetch(encodedUrl, { mode: 'no-cors' });
-                const buffer = await response.arrayBuffer();
-                fileContent = buffer; // Store the file content in the variable
+                fileContent = await response.blob(); // Read as blob
             } catch (error) {
                 console.error('File Fetch Error:', error);
                 document.getElementById("result").textContent = "Error fetching the file.";
                 return;
             }
 
+            // Create a copy of the blob to avoid using it up
+            const fileCopy = new Blob([fileContent], { type: fileContent.type });
+
             const formData = new FormData();
             formData.append('name', fileName);
             formData.append('anonymous', true);
-            formData.append('file', new Blob([fileContent])); // Convert back to Blob
+            formData.append('file', fileCopy);
 
             try {
                 // Send a POST request to the Pixeldrain API
