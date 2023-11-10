@@ -48,6 +48,9 @@
                     responseField.textContent = "File URL: Uploading...";
                 }
 
+                const data = await response.arrayBuffer();
+                const file = new Blob([data], { type: contentType });
+
                 const reader = response.body.getReader();
                 let receivedSize = 0;
 
@@ -61,7 +64,7 @@
                     progressBar.style.width = `${percentage}%`;
                 }
 
-                return { file: await response.blob(), isImage: contentType.startsWith("image/"), size: totalSize };
+                return { file, isImage: contentType.startsWith("image/"), size: totalSize };
             } catch (error) {
                 const errorText = `Error fetching the file. ${error.message}`;
                 console.error(errorText);
