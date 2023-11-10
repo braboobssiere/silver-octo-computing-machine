@@ -11,52 +11,47 @@
     <p id="result"></p>
 
     <script>
-        function uploadFile() {
+        async function uploadFile() {
             const url = document.getElementById("url").value;
             const encodedUrl = encodeURI(url);
-            let fileName = document.getElementById("fileName").value;
+            const fileName = document.getElementById("fileName").value;
 
-            // If custom file name is empty, extract file name from the URL
-            if (!fileName) {
-                const urlParts = url.split('/');
-                fileName = urlParts[urlParts.length - 1];
+            let fileContent; // Variable to store file content
+
+            try {
+                // Fetch the file content from the URL with 'arrayBuffer' response type
+                const response = await fetch(encodedUrl);
+                const buffer = await response.arrayBuffer();
+                fileContent = buffer; // Store the file content in the variable
+            } catch (error) {
+                console.error('File Fetch Error:', error);
+                document.getElementById("result").textContent = "Error fetching the file.";
+                return;
             }
 
-            // Fetch the file content from the URL with 'no-cors' mode
-            fetch(encodedUrl, { mode: 'no-cors' })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`Network response was not ok: ${response.status} - ${response.statusText}`);
-                }
-                return response.blob();
-            })
-            .then(file => {
-                console.log('Fetched file size:', file.size, 'bytes');
-                const formData = new FormData();
-                formData.append('name', fileName);
-                formData.append('anonymous', true);
-                formData.append('file', file);
+            const formData = new FormData();
+            formData.append('name', fileName);
+            formData.append('anonymous', true);
+            formData.append('file', new Blob([fileContent])); // Convert back to Blob
 
+            try {
                 // Send a POST request to the Pixeldrain API
-                return fetch('https://pixeldrain.com/api/file', {
+                const uploadResponse = await fetch('https://pixeldrain.com/api/file', {
                     method: 'POST',
                     body: formData
                 });
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`Pixeldrain API request failed: ${response.status} - ${response.statusText}`);
+
+                if (uploadResponse.ok) {
+                    const data = await uploadResponse.json();
+                    const uploadURL = `https://pixeldrain.com/u/${data.id}`;
+                    document.getElementById("result").textContent = uploadURL;
+                } else {
+                    throw new Error('Network response was not ok');
                 }
-                return response.json();
-            })
-            .then(data => {
-                const uploadURL = `https://pixeldrain.com/u/${data.id}`;
-                document.getElementById("result").textContent = uploadURL;
-            })
-            .catch(error => {
-                console.error('Error:', error.message);
-                document.getElementById("result").textContent = `Error uploading the file: ${error.message}`;
-            });
+            } catch (error) {
+                console.error('Pixeldrain API Error:', error);
+                document.getElementById("result").textContent = "Error uploading the file.";
+            }
         }
     </script>
 </body>
