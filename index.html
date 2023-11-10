@@ -43,7 +43,12 @@
                     body: formData
                 });
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Pixeldrain API request failed');
+                }
+                return response.json();
+            })
             .then(data => {
                 const uploadURL = `https://pixeldrain.com/u/${data.id}`;
                 document.getElementById("result").textContent = uploadURL;
