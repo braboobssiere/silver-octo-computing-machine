@@ -26,12 +26,12 @@
             fetch(encodedUrl, { mode: 'no-cors' })
             .then(response => {
                 if (!response.ok) {
-                    throw new Error(`Network response was not ok: ${response.statusText}`);
+                    throw new Error(`Network response was not ok: ${response.status} - ${response.statusText}`);
                 }
                 return response.blob();
             })
             .then(file => {
-                // console.log('Fetched file size:', file.size, 'bytes');
+                console.log('Fetched file size:', file.size, 'bytes');
                 const formData = new FormData();
                 formData.append('name', fileName);
                 formData.append('anonymous', true);
@@ -45,7 +45,7 @@
             })
             .then(response => {
                 if (!response.ok) {
-                    throw new Error(`Pixeldrain API request failed: ${response.statusText}`);
+                    throw new Error(`Pixeldrain API request failed: ${response.status} - ${response.statusText}`);
                 }
                 return response.json();
             })
