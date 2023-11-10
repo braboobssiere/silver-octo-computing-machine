@@ -1,58 +1,50 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>File Uploader</title>
-</head>
-<body>
-    <h1>File Uploader</h1>
-    <input type="text" id="url" placeholder="Enter File URL">
-    <input type="text" id="fileName" placeholder="Enter File Name With Extension">
-    <button onclick="uploadFile()">Upload File</button>
-    <p id="result"></p>
-
-    <script>
+<script>
     function uploadFile() {
         const url = document.getElementById("url").value;
         const encodedUrl = encodeURI(url);
         const fileName = document.getElementById("fileName").value;
 
-        // Fetch the file content from the URL
-        fetch(encodedUrl)
-            .then(response => response.blob())
-            .then(file => {
-                const formData = new FormData();
-                formData.append('name', fileName);
-                formData.append('anonymous', true);
-                formData.append('file', file);
+        // Get the user's browser User-Agent
+        const userAgent = navigator.userAgent;
 
-                // Send a POST request to the Pixeldrain API
-                fetch('https://pixeldrain.com/api/file', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => {
-                    console.log('Pixeldrain API Response:', response);
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    console.log('Pixeldrain API Data:', data);
-                    const uploadURL = `https://pixeldrain.com/u/${data.id}`;
-                    document.getElementById("result").textContent = uploadURL;
-                })
-                .catch(error => {
-                    console.error('Pixeldrain API Error:', error);
-                    document.getElementById("result").textContent = "Error uploading the file.";
-                });
+        // Fetch the file content from the URL
+        fetch(encodedUrl, {
+            headers: {
+                'User-Agent': userAgent
+            }
+        })
+        .then(response => response.blob())
+        .then(file => {
+            const formData = new FormData();
+            formData.append('name', fileName);
+            formData.append('anonymous', true);
+            formData.append('file', file);
+
+            // Send a POST request to the Pixeldrain API
+            fetch('https://pixeldrain.com/api/file', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                console.log('Pixeldrain API Response:', response);
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Pixeldrain API Data:', data);
+                const uploadURL = `https://pixeldrain.com/u/${data.id}`;
+                document.getElementById("result").textContent = uploadURL;
             })
             .catch(error => {
-                console.error('File Fetch Error:', error);
-                document.getElementById("result").textContent = "Error fetching the file.";
+                console.error('Pixeldrain API Error:', error);
+                document.getElementById("result").textContent = "Error uploading the file.";
             });
+        })
+        .catch(error => {
+            console.error('File Fetch Error:', error);
+            document.getElementById("result").textContent = "Error fetching the file.";
+        });
     }
-    </script>
-        
-</body>
-</html>
+</script>
