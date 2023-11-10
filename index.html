@@ -2,18 +2,12 @@
 <html>
 <head>
     <title>File Uploader</title>
-    <style>
-        progress {
-            width: 100%;
-        }
-    </style>
 </head>
 <body>
     <h1>File Uploader</h1>
     <input type="text" id="url" placeholder="Enter File URL">
     <input type="text" id="fileName" placeholder="Enter File Name With Extension">
     <button onclick="uploadFile()">Upload File</button>
-    <progress id="progress" value="0" max="100"></progress>
     <p id="result"></p>
 
     <script>
@@ -28,66 +22,36 @@
                 fileName = urlParts[urlParts.length - 1];
             }
 
-            // Create a new XMLHttpRequest object
-            const xhr = new XMLHttpRequest();
-
-            // Configure it as a GET request
-            xhr.open('GET', encodedUrl, true);
-
-            // Set the responseType to 'blob' for binary data
-            xhr.responseType = 'blob';
-
-            // Define the onload event handler
-            xhr.onload = function() {
-                if (xhr.status === 200) {
-                    const file = xhr.response;
-
-                    const formData = new FormData();
-                    formData.append('file', file, fileName);
-
-                    // Send a POST request to the Pixeldrain API with progress tracking
-                    const uploadProgress = document.getElementById('progress');
-                    fetch('https://pixeldrain.com/api/file', {
-                        method: 'POST',
-                        body: formData,
-                        onProgress: (event) => {
-                            if (event.lengthComputable) {
-                                const percent = (event.loaded / event.total) * 100;
-                                uploadProgress.value = percent;
-                            }
-                        }
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        const uploadURL = `https://pixeldrain.com/u/${data.id}`;
-                        document.getElementById("result").textContent = uploadURL;
-                    })
-                    .catch(error => {
-                        console.error(error);
-                        document.getElementById("result").textContent = "Error uploading the file.";
-                    });
-                } else {
-                    console.error('File Fetch Error:', xhr.statusText);
-                    document.getElementById("result").textContent = "Error fetching the file.";
+            // Fetch the file content from the URL with 'no-cors' mode
+            fetch(encodedUrl, { mode: 'no-cors' })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
                 }
-            };
+                return response.blob();
+            })
+            .then(file => {
+                console.log('Fetched file size:', file.size, 'bytes');
+                const formData = new FormData();
+                formData.append('name', fileName);
+                formData.append('anonymous', true);
+                formData.append('file', file);
 
-            // Define the onerror event handler
-            xhr.onerror = function() {
-                console.error('File Fetch Error:', xhr.statusText);
-                document.getElementById("result").textContent = "Error fetching the file.";
-            };
-
-            // Define the onprogress event handler for fetching
-            xhr.onprogress = function(event) {
-                if (event.lengthComputable) {
-                    const percent = (event.loaded / event.total) * 100;
-                    document.getElementById('progress').value = percent;
-                }
-            };
-
-            // Send the request
-            xhr.send();
+                // Send a POST request to the Pixeldrain API
+                return fetch('https://pixeldrain.com/api/file', {
+                    method: 'POST',
+                    body: formData
+                });
+            })
+            .then(response => response.json())
+            .then(data => {
+                const uploadURL = `https://pixeldrain.com/u/${data.id}`;
+                document.getElementById("result").textContent = uploadURL;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById("result").textContent = "Error uploading the file.";
+            });
         }
     </script>
 </body>
