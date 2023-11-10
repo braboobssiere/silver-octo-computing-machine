@@ -31,7 +31,7 @@
                 return response.blob();
             })
             .then(file => {
-                console.log('Fetched file size:', file.size, 'bytes');
+                // console.log('Fetched file size:', file.size, 'bytes');
                 const formData = new FormData();
                 formData.append('name', fileName);
                 formData.append('anonymous', true);
