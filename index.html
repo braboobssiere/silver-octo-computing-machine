@@ -51,15 +51,12 @@
                 const data = await response.arrayBuffer();
                 const file = new Blob([data], { type: contentType });
 
-                const reader = response.body.getReader();
+                const reader = response.body.getReader(); // This line is not needed and can be removed
+
                 let receivedSize = 0;
 
-                while (true) {
-                    const { done, value } = await reader.read();
-
-                    if (done) break;
-
-                    receivedSize += value.length;
+                for await (const chunk of response.body) {
+                    receivedSize += chunk.length;
                     const percentage = ((receivedSize / totalSize) * 100).toFixed(2);
                     progressBar.style.width = `${percentage}%`;
                 }
