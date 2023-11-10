@@ -5,138 +5,44 @@
 </head>
 <body>
     <h1>File Uploader</h1>
-    <div id="uploadForms">
-        <div class="upload-form">
-            <input type="text" class="url-input" placeholder="Enter File URL">
-            <input type="text" class="fileName-input" placeholder="Enter File Name With Extension">
-            <p class="response"></p>
-            <div class="progress-bar" style="display: none;">
-                <div class="progress"></div>
-            </div>
-        </div>
-    </div>
-    <button onclick="addUploadForm()">+</button>
-    <button onclick="uploadFiles()">Upload All Files</button>
-    <button onclick="downloadResponses()">Download All Responses</button>
+    <input type="text" id="url" placeholder="Enter File URL">
+    <input type="text" id="fileName" placeholder="Enter File Name With Extension">
+    <button onclick="uploadFile()">Upload File</button>
+    <p id="result"></p>
 
     <script>
-        const responses = [];
+        function uploadFile() {
+            const url = document.getElementById("url").value;
+            const fileName = document.getElementById("fileName").value;
 
-        async function fetchFileContent(url, responseField, progressBar) {
-            try {
-                const encodedUrl = encodeURI(url);
-                const response = await fetch(encodedUrl, {
-                    method: 'GET' // Use the GET method to fetch files
-                });
+            // Fetch the file content from the URL
+            fetch(url)
+                .then(response => response.blob())
+                .then(file => {
+                    const formData = new FormData();
+                    formData.append('name', fileName);
+                    formData.append('anonymous', true);
+                    formData.append('file', file);
 
-                if (!response.ok) {
-                    const errorText = `Error fetching the file. Status: ${response.status}, ${response.statusText}`;
-                    console.error(errorText);
-                    responseField.textContent = errorText;
-                    progressBar.style.display = "none";
-                    return null;
-                }
-
-                const contentType = response.headers.get("content-type");
-                const totalSize = response.headers.get("content-length");
-
-                if (contentType.startsWith("image/")) {
-                    // Display image URL format
-                    responseField.textContent = "Image URL: Uploading...";
-                } else {
-                    // Display regular URL format
-                    responseField.textContent = "File URL: Uploading...";
-                }
-
-                const data = await response.arrayBuffer();
-                const file = new Blob([data], { type: contentType });
-
-                const reader = response.body.getReader(); // This line is not needed and can be removed
-
-                let receivedSize = 0;
-
-                for await (const chunk of response.body) {
-                    receivedSize += chunk.length;
-                    const percentage = ((receivedSize / totalSize) * 100).toFixed(2);
-                    progressBar.style.width = `${percentage}%`;
-                }
-
-                return { file, isImage: contentType.startsWith("image/"), size: totalSize };
-            } catch (error) {
-                const errorText = `Error fetching the file. ${error.message}`;
-                console.error(errorText);
-                responseField.textContent = errorText;
-                progressBar.style.display = "none";
-                return null;
-            }
-        }
-
-        async function uploadFile(url, fileName, responseField, progressBar) {
-            progressBar.style.display = "block";
-            responseField.textContent = "Uploading...";
-
-            const { file, isImage, size } = await fetchFileContent(url, responseField, progressBar);
-
-            if (file) {
-                const formData = new FormData();
-                formData.append('name', fileName);
-                formData.append('anonymous', true);
-                formData.append('file', file);
-
-                try {
-                    const postResponse = await fetch('https://pixeldrain.com/api/file', {
+                    // Send a POST request to the Pixeldrain API
+                    fetch('https://pixeldrain.com/api/file', {
                         method: 'POST',
                         body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        const uploadURL = `https://pixeldrain.com/u/${data.id}`;
+                        document.getElementById("result").textContent = uploadURL;
+                    })
+                    .catch(error => {
+                        console.error(error);
+                        document.getElementById("result").textContent = "Error uploading the file.";
                     });
-
-                    if (postResponse.ok) {
-                        const data = await postResponse.json();
-                        const fileID = data.id;
-
-                        // Display the URL format based on file type and size
-                        if (isImage && size <= 1024 * 1024) { // 1MB limit
-                            responseField.innerHTML = `<img src="https://pixeldrain.com/api/file/${fileID}" alt="Image" width="300"/>`;
-                        } else {
-                            responseField.innerHTML = `File URL: <a href="https://pixeldrain.com/u/${fileID}" target="_blank">https://pixeldrain.com/u/${fileID}</a>`;
-                        }
-
-                        responses.push({ fileName, uploadURL: fileID });
-                        progressBar.style.display = "none";
-                    } else {
-                        const errorText = `Error uploading the file. Status: ${postResponse.status}, ${postResponse.statusText}`;
-                        console.error(errorText);
-                        responseField.textContent = errorText;
-                        progressBar.style.display = "none";
-                    }
-                } catch (error) {
-                    const errorText = `Error uploading the file. ${error.message}`;
-                    console.error(errorText);
-                    responseField.textContent = errorText;
-                    progressBar.style.display = "none";
-                }
-            }
-        }
-
-        function uploadFiles() {
-            responses.length = 0; // Clear old results
-            const uploadForms = document.querySelectorAll('.upload-form');
-
-            uploadForms.forEach(uploadForm => {
-                const url = uploadForm.querySelector(".url-input").value;
-                const fileName = uploadForm.querySelector(".fileName-input").value;
-                const responseField = uploadForm.querySelector(".response");
-                const progressBar = uploadForm.querySelector(".progress-bar");
-
-                if (url.trim() !== "") {
-                    // Clear form input
-                    uploadForm.querySelector(".url-input").value = "";
-                    uploadForm.querySelector(".fileName-input").value = "";
-
-                    uploadFile(url, fileName, responseField, progressBar);
-                } else {
-                    responseField.textContent = "URL is empty.";
-                }
-            });
+                })
+                .catch(error => {
+                    console.error(error);
+                    document.getElementById("result").textContent = "Error fetching the file.";
+                });
         }
     </script>
 </body>
