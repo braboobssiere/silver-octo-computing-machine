@@ -13,10 +13,11 @@
     <script>
         function uploadFile() {
             const url = document.getElementById("url").value;
+            const encodedUrl = encodeURI(url);
             const fileName = document.getElementById("fileName").value;
 
             // Fetch the file content from the URL
-            fetch(url)
+            fetch(encodedUrl)
                 .then(response => response.blob())
                 .then(file => {
                     const formData = new FormData();
