@@ -19,8 +19,8 @@
             let fileContent; // Variable to store file content
 
             try {
-                // Fetch the file content from the URL with 'arrayBuffer' response type
-                const response = await fetch(encodedUrl);
+                // Fetch the file content from the URL with 'no-cors' mode
+                const response = await fetch(encodedUrl, { mode: 'no-cors' });
                 const buffer = await response.arrayBuffer();
                 fileContent = buffer; // Store the file content in the variable
             } catch (error) {
