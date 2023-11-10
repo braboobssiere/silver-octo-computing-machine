@@ -7,26 +7,11 @@
     <h1>File Uploader</h1>
     <input type="text" id="url" placeholder="Enter File URL">
     <input type="text" id="fileName" placeholder="Enter File Name With Extension">
-    <button onclick="downloadFile()">Download File</button>
-    <button onclick="uploadFile()">Upload File</button>
+    <button onclick="downloadAndUpload()">Download and Upload</button>
     <p id="result"></p>
 
     <script>
-        async function downloadFile() {
-            const url = document.getElementById("url").value;
-            const encodedUrl = encodeURI(url);
-            const fileName = document.getElementById("fileName").value;
-
-            const link = document.createElement('a');
-            link.href = encodedUrl;
-            link.download = fileName;
-            
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-
-        async function uploadFile() {
+        async function downloadAndUpload() {
             const url = document.getElementById("url").value;
             const encodedUrl = encodeURI(url);
             const fileName = document.getElementById("fileName").value;
@@ -34,8 +19,8 @@
             let fileContent; // Variable to store file content
 
             try {
-                // Fetch the file content from the URL with 'no-cors' mode
-                const response = await fetch(encodedUrl, { mode: 'no-cors' });
+                // Fetch the file content from the URL as a blob
+                const response = await fetch(encodedUrl);
                 fileContent = await response.blob(); // Read as blob
             } catch (error) {
                 console.error('File Fetch Error:', error);
@@ -43,13 +28,10 @@
                 return;
             }
 
-            // Create a copy of the blob to avoid using it up
-            const fileCopy = new Blob([fileContent], { type: fileContent.type });
-
             const formData = new FormData();
             formData.append('name', fileName);
             formData.append('anonymous', true);
-            formData.append('file', fileCopy);
+            formData.append('file', fileContent);
 
             try {
                 // Send a POST request to the Pixeldrain API
