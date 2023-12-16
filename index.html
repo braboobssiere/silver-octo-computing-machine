@@ -1,1 +1,74 @@
-wwww
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SRT to VTT Converter</title>
+</head>
+<body>
+    <h1>SRT to VTT Converter</h1>
+
+    <label for="fileInput">Choose SRT File:</label>
+    <input type="file" id="fileInput" accept=".srt">
+    <br>
+    OR
+    <br>
+    <label for="urlInput">Enter SRT URL:</label>
+    <input type="text" id="urlInput" placeholder="Enter SRT URL">
+    <button onclick="convertSrtToVtt()">Convert</button>
+
+    <div id="result"></div>
+
+    <script>
+        function convertSrtToVtt() {
+            const fileInput = document.getElementById('fileInput');
+            const urlInput = document.getElementById('urlInput');
+            const resultDiv = document.getElementById('result');
+
+            const input = fileInput.files[0] || urlInput.value.trim();
+
+            if (!input) {
+                alert('Please choose a file or enter a URL.');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const srtContent = e.target.result;
+
+                // Convert SRT to VTT
+                const vttContent = srtContent.replace(/(\d+:\d+:\d+,\d+) --> (\d+:\d+:\d+,\d+)/g, '$1.000 --> $2.000');
+
+                // Create a Blob with the VTT content
+                const vttBlob = new Blob([vttContent], { type: 'text/plain' });
+
+                // Create a download link
+                const downloadLink = document.createElement('a');
+                downloadLink.href = URL.createObjectURL(vttBlob);
+                downloadLink.download = 'converted.vtt';
+
+                // Append the link to the result div
+                resultDiv.innerHTML = ''; // Clear previous content
+                resultDiv.appendChild(downloadLink);
+
+                // Simulate a click on the link to trigger the download
+                downloadLink.click();
+            };
+
+            if (fileInput.files[0]) {
+                reader.readAsText(input);
+            } else {
+                fetch(input)
+                    .then(response => response.text())
+                    .then(data => {
+                        reader.readAsText(new Blob([data], { type: 'text/plain' }));
+                    })
+                    .catch(error => {
+                        alert('Error fetching the SRT file from the URL.');
+                        console.error(error);
+                    });
+            }
+        }
+    </script>
+</body>
+</html>
